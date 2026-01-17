@@ -11,14 +11,15 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3) and
     // run until the queue is empty
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: PersonQueue.Enqueue insertaba al inicio, invirtiendo el orden FIFO.
+
     public void TestTakingTurnsQueue_FiniteRepetition()
     {
         var bob = new Person("Bob", 2);
         var tim = new Person("Tim", 5);
         var sue = new Person("Sue", 3);
 
-        Person[] expectedResult = [bob, tim, sue, bob, tim, sue, tim, sue, tim, tim];
+        Person[] expectedResult = new Person[] { bob, tim, sue, bob, tim, sue, tim, sue, tim, tim };
 
         var players = new TakingTurnsQueue();
         players.AddPerson(bob.Name, bob.Turns);
