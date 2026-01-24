@@ -1,4 +1,7 @@
 using System.Text.Json;
+using System.Globalization;
+using System.Net.Http;
+using System.Text;
 
 public static class SetsAndMaps
 {
@@ -21,8 +24,33 @@ public static class SetsAndMaps
     /// <param name="words">An array of 2-character words (lowercase, no duplicates)</param>
     public static string[] FindPairs(string[] words)
     {
-        // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        var seen = new HashSet<string>();
+        var pairs = new List<string>();
+
+        foreach (var word in words)
+        {
+            if (word.Length != 2)
+            {
+                continue;
+            }
+
+            if (word[0] == word[1])
+            {
+                // Palabras con letras repetidas no generan pares
+                seen.Add(word);
+                continue;
+            }
+
+            var reversed = new string(new[] { word[1], word[0] });
+            if (seen.Contains(reversed))
+            {
+                pairs.Add($"{word} & {reversed}");
+            }
+
+            seen.Add(word);
+        }
+
+        return pairs.ToArray();
     }
 
     /// <summary>
@@ -41,8 +69,26 @@ public static class SetsAndMaps
         var degrees = new Dictionary<string, int>();
         foreach (var line in File.ReadLines(filename))
         {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
             var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+            if (fields.Length < 4)
+            {
+                continue;
+            }
+
+            var degree = fields[3].Trim();
+            if (degrees.ContainsKey(degree))
+            {
+                degrees[degree] += 1;
+            }
+            else
+            {
+                degrees[degree] = 1;
+            }
         }
 
         return degrees;
@@ -66,8 +112,51 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        var normalized1 = Normalize(word1);
+        var normalized2 = Normalize(word2);
+
+        if (normalized1.Length != normalized2.Length)
+        {
+            return false;
+        }
+
+        var counts = new Dictionary<char, int>();
+        foreach (var c in normalized1)
+        {
+            counts[c] = counts.GetValueOrDefault(c) + 1;
+        }
+
+        foreach (var c in normalized2)
+        {
+            if (!counts.ContainsKey(c))
+            {
+                return false;
+            }
+
+            counts[c] -= 1;
+            if (counts[c] == 0)
+            {
+                counts.Remove(c);
+            }
+        }
+
+        return counts.Count == 0;
+
+        static string Normalize(string word)
+        {
+            var builder = new StringBuilder();
+            foreach (var c in word)
+            {
+                if (char.IsWhiteSpace(c))
+                {
+                    continue;
+                }
+
+                builder.Append(char.ToLowerInvariant(c));
+            }
+
+            return builder.ToString();
+        }
     }
 
     /// <summary>
@@ -96,11 +185,28 @@ public static class SetsAndMaps
 
         var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
 
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+        if (featureCollection?.Features == null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var summaries = new List<string>();
+        foreach (var feature in featureCollection.Features)
+        {
+            var place = feature?.Properties?.Place;
+            if (string.IsNullOrWhiteSpace(place))
+            {
+                place = "Unknown location";
+            }
+
+            var mag = feature?.Properties?.Mag;
+            var magText = mag.HasValue
+                ? mag.Value.ToString("0.##", CultureInfo.InvariantCulture)
+                : "N/A";
+
+            summaries.Add($"{place} - Mag {magText}");
+        }
+
+        return summaries.ToArray();
     }
 }
